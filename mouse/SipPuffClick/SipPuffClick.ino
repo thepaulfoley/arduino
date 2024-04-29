@@ -28,10 +28,13 @@
 
 #include "Mouse.h"
 
-enum OperatingMode { printMode, mouseMode };
+enum OperatingMode { PRINT_MODE, MOUSE_MODE };
 
 // by default, the program will print the sensor values to the serial monitor
-OperatingMode mode = printMode;
+OperatingMode mode = PRINT_MODE;
+
+// enum called mouseState with three states: left, right, and none
+enum MouseState { LEFT, RIGHT, NONE };
 
 // set pin number for reading the air pressure from the sensor
 const int AIR_PRESSURE_PIN = A0;
@@ -77,19 +80,31 @@ void printValues(const int& rawVal, const int& convertedVal) {
 
 void doClick(const int& convertedVal) {
   // if convertedVal < LEFT_THRESHOLD then push/continue pushing the left mouse
-  // button
+  // button and release the
+
   if (convertedVal < LEFT_THRESHOLD) {
+    // press the left mouse button
     Mouse.press(MOUSE_LEFT);
+    // release the right mouse button
+    Mouse.release(MOUSE_RIGHT);
+    // save the mouse state
+    mouseState = LEFT;
   }
   // if convertedVal > RIGHT_THRESHOLD then push/continue pushing the
   // right mouse button
   else if (convertedVal > RIGHT_THRESHOLD) {
+    // press the right mouse button
     Mouse.press(MOUSE_RIGHT);
+    // release the left mouse button
+    Mouse.release(MOUSE_LEFT);
+    // save the mouse state
+    mouseState = RIGHT;
   }
   // otherwise release either button that is being pushed
   else {
     Mouse.release(MOUSE_LEFT);
     Mouse.release(MOUSE_RIGHT);
+    mouseState = NONE;
   }
 }
 
@@ -99,8 +114,8 @@ void loop() {
   // map the Raw data to kPa
   outputValue = map(sensorValue, 0, 1023, -100, 100);
 
-  // if mode equals printMode, print the sensor values to the serial monitor
-  if (mode == printMode) {
+  // if mode equals PRINT_MODE, print the sensor values to the serial monitor
+  if (mode == PRINT_MODE) {
     printValues(sensorValue, outputValue);
   } else {
     doClick(outputValue);
