@@ -28,6 +28,11 @@
 
 #include "Mouse.h"
 
+enum OperatingMode { printMode, mouseMode };
+
+// by default, the program will print the sensor values to the serial monitor
+OperatingMode mode = printMode;
+
 // set pin number for reading the air pressure from the sensor
 const int AIR_PRESSURE_PIN = A0;
 // when the air pressure reading from the sensor goes below this threshold, the
@@ -51,6 +56,8 @@ int sensorValue = 0;
 int outputValue = 0;
 
 void setup() {
+  // must be called before doing any mouse emulation
+  Mouse.begin();
   // start serial port at 9600 bps and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
@@ -71,9 +78,19 @@ void printValues(const int& rawVal, const int& convertedVal) {
 void doClick(const int& convertedVal) {
   // if convertedVal < LEFT_THRESHOLD then push/continue pushing the left mouse
   // button
+  if (convertedVal < LEFT_THRESHOLD) {
+    Mouse.press(MOUSE_LEFT);
+  }
   // if convertedVal > RIGHT_THRESHOLD then push/continue pushing the
   // right mouse button
+  else if (convertedVal > RIGHT_THRESHOLD) {
+    Mouse.press(MOUSE_RIGHT);
+  }
   // otherwise release either button that is being pushed
+  else {
+    Mouse.release(MOUSE_LEFT);
+    Mouse.release(MOUSE_RIGHT);
+  }
 }
 
 void loop() {
@@ -82,8 +99,19 @@ void loop() {
   // map the Raw data to kPa
   outputValue = map(sensorValue, 0, 1023, -100, 100);
 
-  printValues(sensorValue, outputValue);
+  // if mode equals printMode, print the sensor values to the serial monitor
+  if (mode == printMode) {
+    printValues(sensorValue, outputValue);
+  } else {
+    doClick(outputValue);
+  }
+
   // wait before moving on to the next iteration of the loop and in turn the
   // next reading from the sensor
+
+  // TODO Mouse.end must be called to end mouse emulation
+  if (some_end_condition) {
+    Mouse.end();
+  }
   delay(responseDelay_ms);
 }
